@@ -1,0 +1,188 @@
+import { EyeTestType, PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+
+const prisma = new PrismaClient();
+
+async function main() {
+	// 1) Ensure demo user exists
+	const email = "demo@aieyecare.app";
+	const passwordHash = await bcrypt.hash("password123", 10);
+
+	await prisma.user.upsert({
+		where: { email },
+		update: {},
+		create: {
+			fullname: "Demo User",
+			email,
+			passwordHash,
+			age: 28,
+			eyeConditions: [],
+		},
+	});
+
+	// 2) Seed Exercises
+	const exercises = [
+		{
+			title: "Blinking Exercise",
+			description: "Reduce eye strain and improve lubrication by controlled blinking cycles.",
+			tags: ["relaxation", "dry-eye"],
+			config: {
+				type: "relaxation",
+				durationMin: 2,
+				difficulty: "beginner",
+				instructions: [
+					"Sit comfortably and relax your shoulders.",
+					"Blink normally for 30 seconds.",
+					"Close your eyes gently for 5 seconds, then open.",
+					"Repeat the cycle for the full duration.",
+				],
+				benefits: ["Reduces dryness", "Relaxes eye muscles"],
+			},
+		},
+		{
+			title: "Focus Shifting",
+			description: "Strengthen focusing muscles by alternating between near and far focus.",
+			tags: ["focus", "near-far"],
+			config: {
+				type: "focus",
+				durationMin: 3,
+				difficulty: "intermediate",
+				instructions: [
+					"Hold your thumb 20cm in front of your eyes.",
+					"Focus on your thumb for 10 seconds.",
+					"Shift focus to an object 3–6 meters away for 10 seconds.",
+					"Alternate focus for the full duration.",
+				],
+				benefits: ["Improves accommodation", "Reduces digital eye strain"],
+			},
+		},
+		{
+			title: "Eye Rotation",
+			description: "Improve ocular muscle flexibility with circular eye movements.",
+			tags: ["mobility", "warmup"],
+			config: {
+				type: "tracking",
+				durationMin: 2,
+				difficulty: "beginner",
+				instructions: [
+					"Look up, then slowly rotate your eyes clockwise for 10 reps.",
+					"Repeat counter‑clockwise for 10 reps.",
+					"Keep movements smooth. Do not strain.",
+				],
+				benefits: ["Enhances range of motion", "Relieves tension"],
+			},
+		},
+		{
+			title: "20‑20‑20 Rule",
+			description: "Every 20 minutes, look at something 20 feet away for 20 seconds.",
+			tags: ["habit", "relief"],
+			config: {
+				type: "relaxation",
+				durationMin: 1,
+				difficulty: "beginner",
+				instructions: [
+					"Set a timer reminder every 20 minutes.",
+					"Look at a distant object (6m+) for 20 seconds.",
+					"Blink gently while focusing far.",
+				],
+				benefits: ["Breaks near‑focus fatigue", "Prevents headaches"],
+			},
+		},
+	];
+
+	for (const ex of exercises) {
+		const existing = await prisma.exercise.findFirst({ where: { title: ex.title } });
+		if (existing) {
+			await prisma.exercise.update({ where: { id: existing.id }, data: { description: ex.description, tags: ex.tags, config: ex.config } });
+		} else {
+			await prisma.exercise.create({ data: ex });
+		}
+	}
+
+	// 3) Seed Eye Test Templates
+	const tests = [
+		{
+			name: "Snellen Visual Acuity",
+			type: EyeTestType.VISUAL_ACUITY,
+			config: {
+				chart: "snellen",
+				distanceMeters: 3,
+				lines: ["E", "FP", "TOZ", "LPED", "PECFD", "EDFCZP", "FELOPZD"],
+				scoring: { method: "smallest_line_correct", perLine: 10 },
+				instructions: [
+					"Stand or sit 3 meters away.",
+					"Cover one eye at a time.",
+					"Read the smallest line you can.",
+				],
+			},
+		},
+		{
+			name: "Ishihara Color Vision",
+			type: EyeTestType.COLOR_BLINDNESS,
+			config: {
+				plates: [
+					{ number: 12, answer: 12 },
+					{ number: 8, answer: 8 },
+					{ number: 6, answer: 6 },
+					{ number: 29, answer: 29 },
+					{ number: 57, answer: 57 },
+				],
+				instructions: [
+					"Identify the number on each plate.",
+					"Do not spend more than 3 seconds per plate.",
+				],
+				scoring: { method: "num_correct", max: 5 },
+			},
+		},
+		{
+			name: "Astigmatism Dial",
+			type: EyeTestType.ASTIGMATISM,
+			config: {
+				pattern: "fan_and_block",
+				questions: [
+					"Do some lines appear darker than others?",
+					"Do the lines blur or distort?",
+				],
+				instructions: [
+					"Cover one eye at a time.",
+					"Stare at the center of the fan lines.",
+					"Report any darker sectors or distortion.",
+				],
+				scoring: { method: "subjective", scale: ["none", "mild", "moderate", "severe"] },
+			},
+		},
+		{
+			name: "Contrast Sensitivity (Pelli‑Robson)",
+			type: EyeTestType.CONTRAST_SENSITIVITY,
+			config: {
+				stimulus: "letters",
+				levels: [100, 50, 25, 12.5, 6.25, 3.12],
+				instructions: [
+					"Read letters as they fade in contrast.",
+					"Stop when you can no longer reliably identify letters.",
+				],
+				scoring: { method: "highest_level_identified" },
+			},
+		},
+	];
+
+	for (const t of tests) {
+		const existing = await prisma.eyeTestTemplate.findFirst({ where: { name: t.name } });
+		if (existing) {
+			await prisma.eyeTestTemplate.update({ where: { id: existing.id }, data: { type: t.type, config: t.config } });
+		} else {
+			await prisma.eyeTestTemplate.create({ data: t });
+		}
+	}
+
+	console.log("Seed completed. Demo user:", email, "password: password123");
+}
+
+main()
+	.catch((e) => {
+		console.error(e);
+		process.exit(1);
+	})
+	.finally(async () => {
+		await prisma.$disconnect();
+	});
