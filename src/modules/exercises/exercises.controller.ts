@@ -123,6 +123,7 @@ export const completeBySession = async (req: AuthedRequest<{ sessionId: string }
 export const history = async (req: AuthedRequest, res: Response) => {
   const rows = await prisma.exerciseCompletion.findMany({
     where: { userId: req.user!.id },
+    include: { exercise: true },
     orderBy: { completedAt: "desc" },
   });
   res.json(rows.map(r => ({ id: r.id, exerciseId: r.exerciseId, userId: r.userId, completedAt: r.completedAt, duration: (r.durationSec || 0) / 60, score: r.score })));
