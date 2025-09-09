@@ -126,5 +126,5 @@ export const history = async (req: AuthedRequest, res: Response) => {
     include: { exercise: true },
     orderBy: { completedAt: "desc" },
   });
-  res.json(rows.map(r => ({ id: r.id, exerciseId: r.exerciseId, userId: r.userId, completedAt: r.completedAt, duration: (r.durationSec || 0) / 60, score: r.score })));
+  res.json(rows.map(r => ({ id: r.id, exerciseId: r.exerciseId, userId: r.userId, completedAt: r.completedAt, duration: (r.durationSec || 0) / 60, score: r.score, exercise: r.exercise })));
 };
