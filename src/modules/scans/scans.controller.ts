@@ -26,16 +26,22 @@ export const upload = [
           { 
             role: "user", 
             content: `Analyze this eye image URL: ${result.secure_url}. Return STRICT JSON with exactly these keys:
-            - "summary": string (<=120 words)
-            - "findings": array of objects with keys: "name", "description", "confidence" (number 0-100), "severity" ("low"|"medium"|"high")
-            - "recommendations": array of strings
-            
-            Example format:
-            {
-              "summary": "Brief analysis summary",
-              "findings": [{"name": "Finding Name", "description": "Description", "confidence": 85, "severity": "medium"}],
-              "recommendations": ["Recommendation 1", "Recommendation 2"]
-            }` 
+              - "summary": string (<=120 words)
+              - "findings": array of objects with keys: "name", "description", "confidence" (number 0-100), "severity" ("low"|"medium"|"high")
+              - "recommendations": array of strings
+
+              IMPORTANT: Vary confidence scores based on clarity and certainty of findings:
+              - 90-100: Very clear, obvious findings
+              - 70-89: Moderately clear findings
+              - 50-69: Uncertain or subtle findings  
+              - Below 50: Very uncertain or questionable findings
+
+              Example format:
+              {
+                "summary": "Brief analysis summary",
+                "findings": [{"name": "Finding Name", "description": "Description", "confidence": 85, "severity": "medium"}],
+                "recommendations": ["Recommendation 1", "Recommendation 2"]
+              }`
           }
         ],
         temperature: 0.2
